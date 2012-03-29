@@ -33,27 +33,27 @@ import java.awt.event.MouseEvent;
 public class ArcBall {
 
   PApplet parent;
-  
-  float radius;
   PVector center;
-  PVector v_down, v_drag;
-  Quat q_now, q_down, q_drag;
+  float radius;
+  
+  Quat qNow = new Quat(); 
+  Quat qDrag;
+  float dragFactor = 0.99f;
 
-  /** defaults to radius of min(width/2,height/2) and center.z of -radius */
+  /** defaults to radius of mag(width, height)/2 */
   public ArcBall(PApplet parent) {
-    this( null, 0, parent);
+    this(null, 0, parent);
   }
 
   public ArcBall(PVector center, float radius, PApplet parent) {
 
     if (center == null) {
-      float x = parent.g.width / 2.0f;
-      float y = parent.g.height / 2.0f;
+      float w = parent.g.width;
+      float h = parent.g.height;
       if (radius == 0) {
-        radius = PApplet.min(x, y);
+        radius = PApplet.mag(w, h) / 2.0f;
       }
-      float z = -radius;
-      center = new PVector(x, y, z);
+      center = new PVector(w / 2.0f, h / 2.0f);
     }
 
     this.parent = parent;
@@ -63,13 +63,11 @@ public class ArcBall {
 
     this.center = center;
     this.radius = radius;
-
-    v_down = new PVector();
-    v_drag = new PVector();
-
-    q_now = new Quat();
-    q_down = new Quat();
-    q_drag = new Quat();
+  }
+  
+  public void reset() {
+    qNow = new Quat(); 
+    qDrag = null;    
   }
 
   public void mouseEvent(MouseEvent event) {
@@ -80,30 +78,44 @@ public class ArcBall {
     else if (id == MouseEvent.MOUSE_PRESSED) {
       mousePressed();
     }
+    else if (id == MouseEvent.MOUSE_RELEASED) {
+      mouseReleased();
+    }
   }
 
   public void mousePressed() {
-    v_down = mouse_to_sphere(parent.mouseX, parent.mouseY);
-    q_down.set(q_now);
-    q_drag.reset();
+    qDrag = null;
   }
+  
+  public void mouseReleased() {
+    updateDrag();
+  }  
 
   public void mouseDragged() {
-    v_drag = mouse_to_sphere(parent.mouseX, parent.mouseY);
-    q_drag.set(v_down.dot(v_drag), v_down.cross(v_drag));
+    if (!parent.mousePressed) return;
+    updateDrag();
+    qNow = Quat.mult(qNow, qDrag);
+  }
+  
+  private void updateDrag() {
+    PVector pMouse = new PVector(parent.pmouseX, parent.pmouseY);
+    PVector mouse = new PVector(parent.mouseX, parent.mouseY);
+    PVector from = mouseOnSphere(pMouse);
+    PVector to = mouseOnSphere(mouse);
+    qDrag = new Quat(from.dot(to), from.cross(to));
   }
 
   public void pre() {
-    parent.translate(center.x, center.y, center.z);
-    q_now = Quat.mul(q_drag, q_down);
-    applyQuat2Matrix(q_now);
-    parent.translate(-center.x, -center.y, -center.z);
+    if (dragFactor > 0.0 && !parent.mousePressed && qDrag != null && qDrag.w < 0.999999) {
+      qDrag.scaleAngle(dragFactor);
+      qNow = Quat.mult(qNow, qDrag);
+    }
   }
 
-  PVector mouse_to_sphere(float x, float y) {
+  PVector mouseOnSphere(PVector mouse) {
     PVector v = new PVector();
-    v.x = (x - center.x) / radius;
-    v.y = (y - center.y) / radius;
+    v.x = (mouse.x - center.x) / radius;
+    v.y = (mouse.y - center.y) / radius;
 
     float mag = v.x * v.x + v.y * v.y;
     if (mag > 1.0f) {
@@ -115,11 +127,15 @@ public class ArcBall {
     return v;
   }
 
-  void applyQuat2Matrix(Quat q) {
-    // instead of transforming q into a matrix and applying it...
-    float[] aa = q.getValue();
-    parent.rotate(aa[0], aa[1], aa[2], aa[3]);
+  float getAngle() {
+    return qNow.getAngle();
   }
+  
+  PVector getAxis() {
+    return qNow.getAxis();
+  }
+
+  // Quat!
 
   static class Quat {
         
@@ -127,6 +143,13 @@ public class ArcBall {
 
     Quat() {
       reset();
+    }
+
+    Quat(float w, PVector v) {
+      this.w = w;
+      x = v.x;
+      y = v.y;
+      z = v.z;
     }
 
     Quat(float w, float x, float y, float z) {
@@ -143,6 +166,13 @@ public class ArcBall {
       z = 0.0f;
     }
 
+    void set(float w, float x, float y, float z) {
+      this.w = w;
+      this.x = x;
+      this.y = y;
+      this.z = z;
+    }
+
     void set(float w, PVector v) {
       this.w = w;
       x = v.x;
@@ -157,7 +187,7 @@ public class ArcBall {
       z = q.z;
     }
 
-    static Quat mul(Quat q1, Quat q2) {
+    static Quat mult(Quat q1, Quat q2) {
       Quat res = new Quat();
       res.w = q1.w * q2.w - q1.x * q2.x - q1.y * q2.y - q1.z * q2.z;
       res.x = q1.w * q2.x + q1.x * q2.w + q1.y * q2.z - q1.z * q2.y;
@@ -182,6 +212,33 @@ public class ArcBall {
       res[3] = z / sa;
 
       return res;
+    }
+    
+    float getAngle() {
+      return PApplet.acos(w) * 2.0f;
+    }
+    
+    PVector getAxis() {
+      float sa = (float) PApplet.sqrt(1.0f - w * w);
+      if (sa < PApplet.EPSILON) {
+        sa = 1.0f;
+      }
+      return new PVector(x / sa, y / sa, z / sa);      
+    }
+
+    // these are a bit sketchy because they've been written without concern for whetherthe quat remains a unit quat :-/
+
+    void scaleAngle(float scale) {
+      setAngle(scale * getAngle());
+    }    
+    
+    void setAngle(float angle) {
+      PVector axis = getAxis();
+      w = PApplet.cos(angle / 2.0f);
+      float scale = PApplet.sin(angle / 2.0f);
+      x = axis.x * scale;
+      y = axis.y * scale;
+      z = axis.z * scale;      
     }
     
   } // Quat
