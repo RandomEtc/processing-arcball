@@ -1,10 +1,12 @@
 /*
 
   Adapted into Processing library 5th Feb 2006 Tom Carden
-  from "simple arcball use template" 9.16.03 Simon Greenwold
+  from "simple Arcball use template" 9.16.03 Simon Greenwold
+
+  Heavily updated and moved to github in March 2012.
    
   Copyright (c) 2003 Simon Greenwold
-  Copyright (c) 2006 Tom Carden
+  Copyright (c) 2006, 2012 Tom Carden
 
   This library is free software; you can redistribute it and/or
   modify it under the terms of the GNU Lesser General Public
@@ -30,7 +32,7 @@ import processing.core.PVector;
 
 import java.awt.event.MouseEvent;
 
-public class ArcBall {
+public class Arcball {
 
   PApplet parent;
   PVector center;
@@ -41,11 +43,11 @@ public class ArcBall {
   float dragFactor = 0.99f;
 
   /** defaults to radius of mag(width, height)/2 */
-  public ArcBall(PApplet parent) {
+  public Arcball(PApplet parent) {
     this(null, 0, parent);
   }
 
-  public ArcBall(PVector center, float radius, PApplet parent) {
+  public Arcball(PVector center, float radius, PApplet parent) {
 
     if (center == null) {
       float w = parent.g.width;
