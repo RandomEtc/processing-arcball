@@ -26,6 +26,8 @@
 package com.processinghacks.arcball;
 
 import processing.core.PApplet;
+import processing.core.PVector;
+
 import java.awt.event.MouseEvent;
 
 public class ArcBall {
@@ -33,9 +35,9 @@ public class ArcBall {
   PApplet parent;
   
   float center_x, center_y, center_z, radius;
-  Vec3 v_down, v_drag;
+  PVector v_down, v_drag;
   Quat q_now, q_down, q_drag;
-  Vec3[] axisSet;
+  PVector[] axisSet;
   int axis;
 
   /** defaults to radius of min(width/2,height/2) and center_z of -radius */
@@ -55,15 +57,16 @@ public class ArcBall {
     this.center_z = center_z;
     this.radius = radius;
 
-    v_down = new Vec3();
-    v_drag = new Vec3();
+    v_down = new PVector();
+    v_drag = new PVector();
 
     q_now = new Quat();
     q_down = new Quat();
     q_drag = new Quat();
 
-    axisSet = new Vec3[] { 
-      new Vec3(1.0f, 0.0f, 0.0f), new Vec3(0.0f, 1.0f, 0.0f), new Vec3(0.0f, 0.0f, 1.0f) };
+    axisSet = new PVector[] { 
+      new PVector(1.0f, 0.0f, 0.0f), new PVector(0.0f, 1.0f, 0.0f), new PVector(0.0f, 0.0f, 1.0f) 
+    };
     axis = -1;  // no constraints...
   }
 
@@ -85,7 +88,7 @@ public class ArcBall {
 
   public void mouseDragged() {
     v_drag = mouse_to_sphere(parent.mouseX, parent.mouseY);
-    q_drag.set(Vec3.dot(v_down, v_drag), Vec3.cross(v_down, v_drag));
+    q_drag.set(v_down.dot(v_drag), v_down.cross(v_drag));
   }
 
   public void pre() {
@@ -95,8 +98,8 @@ public class ArcBall {
     parent.translate(-center_x, -center_y, -center_z);
   }
 
-  Vec3 mouse_to_sphere(float x, float y) {
-    Vec3 v = new Vec3();
+  PVector mouse_to_sphere(float x, float y) {
+    PVector v = new PVector();
     v.x = (x - center_x) / radius;
     v.y = (y - center_y) / radius;
 
@@ -111,9 +114,9 @@ public class ArcBall {
     return (axis == -1) ? v : constrain_vector(v, axisSet[axis]);
   }
 
-  Vec3 constrain_vector(Vec3 vector, Vec3 axis) {
-    Vec3 res = new Vec3();
-    res.sub(vector, Vec3.mul(axis, Vec3.dot(axis, vector)));
+  PVector constrain_vector(PVector vector, PVector axis) {
+    PVector res = new PVector();
+    res.sub(vector, PVector.mult(axis, PVector.dot(axis, vector)));
     res.normalize();
     return res;
   }
@@ -124,56 +127,6 @@ public class ArcBall {
     float[] aa = q.getValue();
     parent.rotate(aa[0], aa[1], aa[2], aa[3]);
   }
-
-  static class Vec3 {
-    float x, y, z;
-
-    Vec3() {}
-
-    Vec3(float x, float y, float z) {
-      this.x = x;
-      this.y = y;
-      this.z = z;
-    }
-
-    void normalize() {
-      float length = length();
-      x /= length;
-      y /= length;
-      z /= length;
-    }
-
-    float length() {
-      return PApplet.mag(x,y,z);
-    }
-
-    static Vec3 cross(Vec3 v1, Vec3 v2) {
-      Vec3 res = new Vec3();
-      res.x = v1.y * v2.z - v1.z * v2.y;
-      res.y = v1.z * v2.x - v1.x * v2.z;
-      res.z = v1.x * v2.y - v1.y * v2.x;
-      return res;
-    }
-
-    static float dot(Vec3 v1, Vec3 v2) {
-      return v1.x * v2.x + v1.y * v2.y + v1.z * v2.z;
-    }
-
-    static Vec3 mul(Vec3 v, float d) {
-      Vec3 res = new Vec3();
-      res.x = v.x * d;
-      res.y = v.y * d;
-      res.z = v.z * d;
-      return res;
-    }
-
-    void sub(Vec3 v1, Vec3 v2) {
-      x = v1.x - v2.x;
-      y = v1.y - v2.y;
-      z = v1.z - v2.z;
-    }
-    
-  } // Vec3
 
   static class Quat {
         
@@ -197,7 +150,7 @@ public class ArcBall {
       z = 0.0f;
     }
 
-    void set(float w, Vec3 v) {
+    void set(float w, PVector v) {
       this.w = w;
       x = v.x;
       y = v.y;
@@ -241,5 +194,4 @@ public class ArcBall {
   } // Quat
 
 }
-
 
