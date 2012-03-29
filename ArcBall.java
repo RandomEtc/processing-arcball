@@ -34,27 +34,34 @@ public class ArcBall {
 
   PApplet parent;
   
-  float center_x, center_y, center_z, radius;
+  float radius;
+  PVector center;
   PVector v_down, v_drag;
   Quat q_now, q_down, q_drag;
-  PVector[] axisSet;
-  int axis;
 
-  /** defaults to radius of min(width/2,height/2) and center_z of -radius */
+  /** defaults to radius of min(width/2,height/2) and center.z of -radius */
   public ArcBall(PApplet parent) {
-    this(parent.g.width/2.0f,parent.g.height/2.0f,-PApplet.min(parent.g.width/2.0f,parent.g.height/2.0f),PApplet.min(parent.g.width/2.0f,parent.g.height/2.0f), parent);
+    this( null, 0, parent);
   }
 
-  public ArcBall(float center_x, float center_y, float center_z, float radius, PApplet parent) {
+  public ArcBall(PVector center, float radius, PApplet parent) {
+
+    if (center == null) {
+      float x = parent.g.width / 2.0f;
+      float y = parent.g.height / 2.0f;
+      if (radius == 0) {
+        radius = PApplet.min(x, y);
+      }
+      float z = -radius;
+      center = new PVector(x, y, z);
+    }
 
     this.parent = parent;
 
     parent.registerMouseEvent(this);
     parent.registerPre(this);
 
-    this.center_x = center_x;
-    this.center_y = center_y;
-    this.center_z = center_z;
+    this.center = center;
     this.radius = radius;
 
     v_down = new PVector();
@@ -63,11 +70,6 @@ public class ArcBall {
     q_now = new Quat();
     q_down = new Quat();
     q_drag = new Quat();
-
-    axisSet = new PVector[] { 
-      new PVector(1.0f, 0.0f, 0.0f), new PVector(0.0f, 1.0f, 0.0f), new PVector(0.0f, 0.0f, 1.0f) 
-    };
-    axis = -1;  // no constraints...
   }
 
   public void mouseEvent(MouseEvent event) {
@@ -92,16 +94,16 @@ public class ArcBall {
   }
 
   public void pre() {
-    parent.translate(center_x, center_y, center_z);
+    parent.translate(center.x, center.y, center.z);
     q_now = Quat.mul(q_drag, q_down);
     applyQuat2Matrix(q_now);
-    parent.translate(-center_x, -center_y, -center_z);
+    parent.translate(-center.x, -center.y, -center.z);
   }
 
   PVector mouse_to_sphere(float x, float y) {
     PVector v = new PVector();
-    v.x = (x - center_x) / radius;
-    v.y = (y - center_y) / radius;
+    v.x = (x - center.x) / radius;
+    v.y = (y - center.y) / radius;
 
     float mag = v.x * v.x + v.y * v.y;
     if (mag > 1.0f) {
@@ -110,20 +112,11 @@ public class ArcBall {
     else {
       v.z = PApplet.sqrt(1.0f - mag);
     }
-
-    return (axis == -1) ? v : constrain_vector(v, axisSet[axis]);
-  }
-
-  PVector constrain_vector(PVector vector, PVector axis) {
-    PVector res = new PVector();
-    res.sub(vector, PVector.mult(axis, PVector.dot(axis, vector)));
-    res.normalize();
-    return res;
+    return v;
   }
 
   void applyQuat2Matrix(Quat q) {
     // instead of transforming q into a matrix and applying it...
-
     float[] aa = q.getValue();
     parent.rotate(aa[0], aa[1], aa[2], aa[3]);
   }
