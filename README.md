@@ -26,7 +26,7 @@ I will sit down and derive the correct equations for Processing's default camera
 angle and axis can be applied directly.
 
 
-```processing
+```java
 
     import com.processinghacks.arcball.*;
 
