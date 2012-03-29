@@ -28,7 +28,9 @@ angle and axis can be applied directly.
 
 ```processing
 
-    Arcball Arcball;
+    import com.processinghacks.arcball.*;
+
+    Arcball arcball;
     boolean applyToCamera = true;
 
     void setup() {
@@ -36,7 +38,7 @@ angle and axis can be applied directly.
       // for a default Arcball
       // centered on width/2, height/2, -min(width/2,height/2)
       // with radius min(width/2,height/2)
-      Arcball = new Arcball(this);
+      arcball = new Arcball(this);
     }
 
     void draw() {
@@ -46,8 +48,8 @@ angle and axis can be applied directly.
       camera();
       if (applyToCamera) {
         translate(width/2,height/2);
-        PVector axis = Arcball.getAxis();
-        rotate( Arcball.getAngle(), axis.x, axis.y, -axis.z );
+        PVector axis = arcball.getAxis();
+        rotate( arcball.getAngle(), axis.x, axis.y, -axis.z );
         translate(-width/2,-height/2);
       }
       endCamera();
@@ -58,8 +60,8 @@ angle and axis can be applied directly.
       fill(#ff9900);
       translate(width/2,height/2);
       if (!applyToCamera) {
-        PVector axis = Arcball.getAxis();
-        rotate( -Arcball.getAngle(), -axis.x, -axis.y, axis.z );
+        PVector axis = arcball.getAxis();
+        rotate( -arcball.getAngle(), -axis.x, -axis.y, axis.z );
       }
       box(200.0);
       popMatrix();
