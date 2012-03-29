@@ -114,7 +114,7 @@ public class Arcball {
     }
   }
 
-  PVector mouseOnSphere(PVector mouse) {
+  private PVector mouseOnSphere(PVector mouse) {
     PVector v = new PVector();
     v.x = (mouse.x - center.x) / radius;
     v.y = (mouse.y - center.y) / radius;
@@ -129,11 +129,11 @@ public class Arcball {
     return v;
   }
 
-  float getAngle() {
+  public float getAngle() {
     return qNow.getAngle();
   }
   
-  PVector getAxis() {
+  public PVector getAxis() {
     return qNow.getAxis();
   }
 
